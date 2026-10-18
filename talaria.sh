@@ -228,19 +228,20 @@ stage_4() {
     # 1. Snap & Snapd Check
     if command -v snap &>/dev/null; then
         log_warn "Snap is currently installed on this system."
+        log_info "Snapd's requirement to verify every installed snap is up to date at boot is a major timesink."
         echo "Currently installed snaps:"
         snap list || true
         echo ""
-        read -r -p "Do you want to inspect Firefox migration and snapd removal? (y/N): " handle_snap
+        read -r -p "Do you want to inspect Firefox migration to apt-get and snapd removal? (y/N): " handle_snap
         if [[ "$handle_snap" =~ ^[Yy]$ ]]; then
-            echo -e "${CYAN}Instructions to migrate Firefox from Snap to Mozilla native APT:${NC}"
+            echo -e "${CYAN}Instructions to migrate Firefox from Snap to Mozilla native APT (apt-get):${NC}"
             echo "1. Run: sudo snap remove firefox"
             echo "2. Add Mozilla APT repo and pinning (/etc/apt/preferences.d/mozilla)"
-            echo "3. Run: sudo apt install firefox"
-            echo "4. When all snaps are removed, purge snapd: sudo apt purge snapd"
+            echo "3. Run: sudo apt-get update && sudo apt-get install firefox"
+            echo "4. Once all snaps are removed, purge snapd: sudo apt-get purge snapd"
         fi
     else
-        log_success "Snap / snapd is not installed (system is free of /dev/loop* snap mounts)!"
+        log_success "Snap / snapd is not installed (system is free of snap update polling and /dev/loop* mounts)!"
     fi
 
     # 2. Heavy Server / Virtualization Stacks

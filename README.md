@@ -1,9 +1,11 @@
 # Talaria 🪽
 
-**Talaria** is a modular, staged Bash optimization suite designed to significantly reduce boot times on Ubuntu systems. Named after the winged sandals of Hermes, it strips away unnecessary background initialization delays, blocking network wait loops, and heavy daemon overhead to deliver an optimized, sub-10 second boot sequence.
+**Talaria** is a modular, staged Bash optimization suite designed to significantly reduce boot times on Ubuntu systems by stripping away unnecessary background initialization delays, blocking network wait loops, and heavy daemon overhead.
 
 > [!NOTE]
-> **Tested Environment:** Tested and validated on **Ubuntu 24.04 LTS (Noble Numbat)** (specifically **Ubuntu 24.04.5 LTS**, Linux Kernel `6.8.0-146-generic`, systemd 255). Compatible with modern Ubuntu releases including 22.04 LTS and 24.04 LTS+.
+> **Tested Environment & Performance Expectations:** Tested and validated on **Ubuntu 24.04 LTS (Noble Numbat)** (specifically **Ubuntu 24.04.5 LTS**, Linux Kernel `6.8.0-146-generic`, systemd 255). Compatible with modern Ubuntu releases including 22.04 LTS and 24.04 LTS+.
+> 
+> *Hardware Dependency:* Sub-10s boot times (`graphical.target @ ~7.4s` on our test machine) depend heavily on underlying hardware (NVMe/SSD throughput, CPU, UEFI initialization, and peripheral buses). Absolute timings will vary; performance figures should be treated as comparative benchmarks rather than universal guarantees.
 
 ---
 
@@ -12,11 +14,11 @@
 Talaria runs in **progressive stages**, prioritizing **high-confidence quick wins** with zero risk of breakage first, leaving deeper package removals and network reconfigurations for user-confirmed stages:
 
 | Stage | Optimization Action | Risk Level | Est. Time Saved | Description |
-| :---: | :--- | :---: | :---: | :--- |
+| :---: | :--- | :--- :---: | :---: | :--- |
 | **Stage 1** | **Mask Wait-Online Services** | 🟢 Zero Risk | **~15 – 30s** | Masks `systemd-networkd-wait-online` and `NetworkManager-wait-online`, marking interfaces `optional: true` so graphical boot never halts waiting for network connectivity. |
 | **Stage 2** | **Tuning Background Timers & Telemetry** | 🟢 Low Risk | **~5 – 10s** | Re-schedules `apt-daily` timers to prevent boot-time disk thrashing; disables crash telemetry (`apport`, `whoopsie`), firmware polling (`fwupd`), and `motd-news`. |
 | **Stage 3** | **Bridge Zero-Delay & Static IP** | 🟡 Moderate | **~15 – 30s** *(if bridges present)*<br>**~2 – 5s** *(DHCP)* | Sets bridge STP `forward-delay: 0` in Netplan to eliminate Spanning Tree Protocol listening delays; transitions DHCP interfaces to static IP addressing. |
-| **Stage 4** | **Snapd & Heavy Stack Pruning** | 🟠 Requires Review | **~10 – 20s** | Migrates Firefox to native Mozilla APT with version pinning; purges `snapd` and all `/dev/loop*` mounts; removes unused server daemons (GitLab, KVM/Libvirt). |
+| **Stage 4** | **Snapd & Heavy Stack Pruning** | 🟠 Requires Review | **~10 – 20s** | Eliminates snapd's heavy boot-time application update verification by transitioning Firefox to native APT (`apt-get`) with pinning, then purging `snapd`, `/dev/loop*` mounts, and idle server stacks (GitLab, KVM/Libvirt). |
 | **Stage 5** | **Systemd Hygiene & Safety Guardrails** | 🟢 Low Risk | **~0.5 – 1s** | Deactivates lingering in-memory units (e.g. `virt-guest-shutdown.target`); removes orphaned unit files; actively guards against dangerous service masks. |
 
 ---
@@ -32,7 +34,7 @@ Talaria runs in **progressive stages**, prioritizing **high-confidence quick win
 ## 🚀 The Problem
 By default, Ubuntu's boot chain blocks on network synchronization and loads legacy or unused background services into the critical startup path:
 1. **Blocking Network Daemons:** Ubuntu's network stack defaults to pausing the desktop load while waiting for DHCP handshakes and Spanning Tree Protocol (STP) listening loops. This alone can add 15 to 30 seconds of artificial delay.
-2. **Heavy Daemon Sprawl & Loop Devices:** Background snaps mount individual virtual disk loop devices (`/dev/loop*`) for every package. Monolithic stacks (like virtualization hypervisors or server runtimes) compete for disk I/O and CPU cycles during early userspace initialization.
+2. **Heavy Daemon Sprawl & Snapd Update Checks:** By default, `snapd` mounts individual virtual disk loop devices (`/dev/loop*`) for every package and spends significant time verifying that installed snap applications are up to date on boot. Monolithic stacks (like virtualization hypervisors or server runtimes) compete for disk I/O and CPU cycles during early userspace initialization.
 
 ---
 
@@ -52,10 +54,11 @@ By default, Ubuntu's boot chain blocks on network synchronization and loads lega
 * **Static IP Transition:** Replaces DHCP lease requests with static bindings to eliminate router handshake latencies during early boot.
 
 ### 🟠 Stage 4: Package & Heavy Stack Pruning (High Impact, User-Confirmed)
-* **Snapd Elimination:**
+* **Snapd Elimination (Removing the Update Timesink):**
+  * One of the largest timesinks on Ubuntu boot is `snapd` verifying that every installed snap application is up to date, alongside mounting virtual loop filesystems for each snap.
   * Checks for installed snaps (`snap list`).
-  * If Firefox is present, migrates profile data to native Mozilla APT with official repository pinning (`/etc/apt/preferences.d/mozilla`).
-  * Purges `snapd`, clearing background snap daemons and all virtual `/dev/loop*` mounts.
+  * If Firefox is present, migrates profile data to native Mozilla APT via `apt-get` with official repository version pinning (`/etc/apt/preferences.d/mozilla`), allowing full browser functionality without snapd.
+  * Once migrated, purges `snapd`, permanently removing background update polling and all `/dev/loop*` virtual disk mounts.
 * **Server & Hypervisor Stack Purge:** Stops and purges unused heavyweight stacks (e.g. GitLab CE `gitlab-runsvdir.service`, `qemu-kvm`, `libvirt-daemon-system`, and default bridge `virbr0`).
 
 ### 🟢 Stage 5: Systemd Hygiene & Safety Enforcement
