@@ -8,6 +8,7 @@
 set -euo pipefail
 
 VERSION="1.0.0"
+TESTED_UBUNTU="Ubuntu 24.04 LTS (Noble Numbat)"
 BASELINE_LOG="/var/log/talaria_baseline.log"
 USER_BASELINE_LOG="${HOME}/.talaria_baseline.log"
 
@@ -365,6 +366,12 @@ diff_benchmarks() {
 show_status() {
     log_header "Talaria Optimization System Status"
 
+    local current_os="Unknown Linux"
+    if [[ -f /etc/os-release ]]; then
+        current_os=$(source /etc/os-release && echo "${PRETTY_NAME:-$NAME}")
+    fi
+    echo -e "Platform   : ${BOLD}${current_os}${NC} (Tested & validated on: ${BOLD}${TESTED_UBUNTU}${NC})\n"
+
     get_service_state() {
         local s="$1"
         local st
@@ -408,6 +415,7 @@ show_status() {
 show_usage() {
     cat << EOF
 Talaria 🪽 v${VERSION} - Ubuntu Boot Speed Optimization Suite
+Tested & validated on: ${TESTED_UBUNTU}
 
 Usage: sudo $0 [OPTION]
 

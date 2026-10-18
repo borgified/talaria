@@ -2,6 +2,9 @@
 
 **Talaria** is a modular, staged Bash optimization suite designed to significantly reduce boot times on Ubuntu systems. Named after the winged sandals of Hermes, it strips away unnecessary background initialization delays, blocking network wait loops, and heavy daemon overhead to deliver an optimized, sub-10 second boot sequence.
 
+> [!NOTE]
+> **Tested Environment:** Tested and validated on **Ubuntu 24.04 LTS (Noble Numbat)** (specifically **Ubuntu 24.04.5 LTS**, Linux Kernel `6.8.0-146-generic`, systemd 255). Compatible with modern Ubuntu releases including 22.04 LTS and 24.04 LTS+.
+
 ---
 
 ## ⚡ Staged Optimization Overview
