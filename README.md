@@ -7,6 +7,14 @@
 > 
 > *Hardware Dependency:* Sub-10s boot times (`graphical.target @ ~7.4s` on our test machine) depend heavily on underlying hardware (NVMe/SSD throughput, CPU, UEFI initialization, and peripheral buses). Absolute timings will vary; performance figures should be treated as comparative benchmarks rather than universal guarantees.
 
+> [!IMPORTANT]
+> ### 💾 Hardware Foundation: NVMe / SSD as Your Boot Drive
+> **The single greatest speed improvement you can make to boot time is hardware.**
+> Before applying software tweaks or running optimization scripts, ensure your root filesystem (`/`) is installed on a solid-state drive (**NVMe M.2 or SATA SSD**):
+> * **Mechanical Hard Drives (HDDs):** Due to rotational latency and slow random 4K read speeds, Ubuntu booting from a mechanical hard drive typically takes **45 to 90+ seconds**. No amount of software tuning can overcome physical disk seek limitations.
+> * **NVMe / SSDs:** Moving your OS to an SSD yields an immediate, massive **30 to 60+ second reduction** in boot time.
+> * Talaria's software optimizations are designed to build upon an SSD foundation to eliminate the remaining network, daemon, and userspace stalls.
+
 ---
 
 ## ⚡ Staged Optimization Overview
@@ -15,6 +23,7 @@ Talaria runs in **progressive stages**, prioritizing **high-confidence quick win
 
 | Stage | Optimization Action | Risk Level | Est. Time Saved | Description |
 | :---: | :--- | :--- :---: | :---: | :--- |
+| **Foundation** | **NVMe / SSD Boot Drive** | 💾 Hardware | **~30 – 60s+** | Moving Ubuntu from a mechanical HDD to an NVMe or SATA SSD removes mechanical seek times and 4K random read bottlenecks before running software tweaks. |
 | **Stage 1** | **Mask Wait-Online Services** | 🟢 Zero Risk | **~15 – 30s** | Masks `systemd-networkd-wait-online` and `NetworkManager-wait-online`, marking interfaces `optional: true` so graphical boot never halts waiting for network connectivity. |
 | **Stage 2** | **Tuning Background Timers & Telemetry** | 🟢 Low Risk | **~5 – 10s** | Re-schedules `apt-daily` timers to prevent boot-time disk thrashing; disables crash telemetry (`apport`, `whoopsie`), firmware polling (`fwupd`), and `motd-news`. |
 | **Stage 3** | **Bridge Zero-Delay & Static IP** | 🟡 Moderate | **~15 – 30s** *(if bridges present)*<br>**~2 – 5s** *(DHCP)* | Sets bridge STP `forward-delay: 0` in Netplan to eliminate Spanning Tree Protocol listening delays; transitions DHCP interfaces to static IP addressing. |

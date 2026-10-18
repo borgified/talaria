@@ -373,6 +373,26 @@ show_status() {
     fi
     echo -e "Platform   : ${BOLD}${current_os}${NC} (Tested & validated on: ${BOLD}${TESTED_UBUNTU}${NC})\n"
 
+    echo -e "${BOLD}Hardware Foundation (Storage Drive):${NC}"
+    local root_dev
+    root_dev=$(findmnt -no SOURCE / 2>/dev/null || true)
+    if [[ -n "$root_dev" ]]; then
+        local disk_info
+        disk_info=$(lsblk -sl "$root_dev" -o NAME,ROTA,TYPE,TRAN,MODEL 2>/dev/null | grep -E "disk" | head -n 1 || true)
+        if [[ -n "$disk_info" ]]; then
+            local rota
+            rota=$(echo "$disk_info" | awk '{print $2}')
+            local model
+            model=$(echo "$disk_info" | awk '{$1=$2=$3=$4=""; print $0}' | sed 's/^[ \t]*//')
+            if [[ "$rota" == "1" ]]; then
+                printf "   %-40s: %b\n" "Root Disk (${model})" "${RED}Mechanical HDD (Rotational)${NC}"
+                echo -e "   ${YELLOW}⚠ PRIORITY NOTE:${NC} Moving root to an NVMe/SSD saves ~30-60s+ before software tuning.\n"
+            else
+                printf "   %-40s: %b\n\n" "Root Disk (${model})" "${GREEN}Solid State (NVMe/SSD)${NC}"
+            fi
+        fi
+    fi
+
     get_service_state() {
         local s="$1"
         local st
