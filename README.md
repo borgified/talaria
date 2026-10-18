@@ -1,4 +1,4 @@
-# Talaria 🪽
+# Talaria 🪽🥾
 
 **Talaria** is a modular, staged Bash optimization suite designed to significantly reduce boot times on Ubuntu systems by stripping away unnecessary background initialization delays, blocking network wait loops, and heavy daemon overhead.
 
