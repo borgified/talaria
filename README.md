@@ -23,7 +23,7 @@ By default, Ubuntu's boot chain blocks on network synchronization and loads lega
 
 ## ✨ Optimization Details
 
-Talaria groups optimizations into two major categories:
+Talaria groups optimizations into three major focus areas:
 
 ### 🌐 Network Stack Tuning
 * **Non-Blocking Boot:** Masks `systemd-networkd-wait-online.service` and tags network interfaces as `optional: true` in Netplan so your graphical session starts immediately at hardware speed.
@@ -36,6 +36,10 @@ Talaria groups optimizations into two major categories:
 * **Telemetry & Crash Reporter Disabling:** Bypasses non-essential reporting services like `apport.service` and `kerneloops.service` that hook into the critical startup chain.
 * **Systemd Cleanup:** Removes orphaned unit files (such as dynamically generated `/usr/lib/systemd/system/gitlab-runsvdir.service`) and stops persistent in-memory targets (such as `virt-guest-shutdown.target`).
 
+### 📈 Benchmark Persistence & Validation (May 16 Workflow)
+* **Pre/Post Reboot Snapshots:** Records baseline boot timings to disk prior to changes so performance gains can be objectively diffed across system restarts.
+* **Loop Prevention & Validation:** Verifies the outcome of individual service modifications against timing benchmarks before progressing to subsequent tweaks.
+
 ## 🛠️ Usage
 Simply clone the repository and run the optimization script:
 
@@ -45,8 +49,32 @@ cd talaria
 sudo ./talaria.sh
 ```
 
-## 📊 Performance Tracking
-You can measure the exact impact of Talaria by inspecting the boot timeline:
+## 📊 Performance Tracking & Reboot Benchmarks
+
+Talaria includes automated before/after benchmark tracking across reboots so you can objectively verify your performance gains.
+
+### 🔄 The Before/After Reboot Verification Workflow
+
+Because reboots clear memory, Talaria uses persistent filesystem breadcrumbs to track and validate speed gains:
+
+1. **Pre-Optimization Snapshot:** Before applying any changes, Talaria records a baseline benchmark of your startup performance:
+   ```bash
+   sudo ./talaria.sh --benchmark-pre
+   # Automatically captures systemd-analyze time, blame, and critical-chain to /var/log/talaria_baseline.log
+   ```
+2. **Apply Optimizations & Reboot:** Run the optimization modules and reboot your machine:
+   ```bash
+   sudo ./talaria.sh --optimize
+   sudo reboot
+   ```
+3. **Post-Reboot Delta Comparison:** After logging back in, Talaria reads the baseline log, records the new boot timings, and diffs them:
+   ```bash
+   ./talaria.sh --diff
+   # Calculates exact seconds saved across firmware, kernel, loader, and userspace
+   ```
+
+### 🔍 Manual Inspection Commands
+You can also inspect the boot timeline directly at any time:
 
 ```bash
 # View overall firmware, kernel, and userspace boot duration
