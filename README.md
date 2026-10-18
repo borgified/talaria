@@ -22,7 +22,7 @@
 Talaria runs in **progressive stages**, prioritizing **high-confidence quick wins** with zero risk of breakage first, leaving deeper package removals and network reconfigurations for user-confirmed stages:
 
 | Stage | Optimization Action | Risk Level | Est. Time Saved | Description |
-| :---: | :--- | :--- :---: | :---: | :--- |
+| :---: | :--- | :---: | :---: | :--- |
 | **Foundation** | **NVMe / SSD Boot Drive** | 💾 Hardware | **~30 – 60s+** | Moving Ubuntu from a mechanical HDD to an NVMe or SATA SSD removes mechanical seek times and 4K random read bottlenecks before running software tweaks. |
 | **Stage 1** | **Mask Wait-Online Services** | 🟢 Zero Risk | **~15 – 30s** | Masks `systemd-networkd-wait-online` and `NetworkManager-wait-online`, marking interfaces `optional: true` so graphical boot never halts waiting for network connectivity. |
 | **Stage 2** | **Tuning Background Timers & Telemetry** | 🟢 Low Risk | **~5 – 10s** | Re-schedules `apt-daily` timers to prevent boot-time disk thrashing; disables crash telemetry (`apport`, `whoopsie`), firmware polling (`fwupd`), and `motd-news`. |
